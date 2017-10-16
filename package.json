@@ -6,9 +6,12 @@
   "directories": {
     "test": "tests"
   },
+  "dependencies": {
+    "levenlabs-log": "^0.1.1"
+  },
   "devDependencies": {
     "nodeunit": "^0.9.1",
-    "redis": "^0.12.1",
+    "ioredis": "^3.1.4",
     "sha1": "^1.1.1"
   },
   "scripts": {
@@ -27,8 +30,5 @@
   ],
   "author": "James Hartig <fastest963@gmail.com>",
   "license": "MIT",
-  "readmeFilename": "README.md",
-  "dependencies": {
-    "levenlabs-log": "^0.1.1"
-  }
+  "readmeFilename": "README.md"
 }

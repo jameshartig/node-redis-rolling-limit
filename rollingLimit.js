@@ -1,6 +1,7 @@
 var util = require('util'),
+    fs = require('fs'),
     log = require('levenlabs-log'),
-    luaScript = require('./lua/rollingLimit.lua.json');
+    luaScript = fs.readFileSync('./lua/rollingLimit.lua');
 
 function RollingLimit(options) {
     if (typeof options !== 'object' || options === null) {
@@ -12,9 +13,8 @@ function RollingLimit(options) {
     if (typeof options.limit !== 'number') {
         throw new TypeError('limit must be a number');
     }
-    //noinspection JSLint
-    if (!options.redis || typeof options.redis.eval !== 'function') {
-        throw new TypeError('redis must be an instance of RedisClient');
+    if (!options.redis || typeof options.redis.defineCommand !== 'function') {
+        throw new TypeError('redis must be an instance of ioredis client');
     }
     if (options.prefix && typeof options.prefix !== 'string') {
         throw new TypeError('prefix must be a string');
@@ -23,6 +23,10 @@ function RollingLimit(options) {
     this.limit = options.limit;
     this.redis = options.redis;
     this.prefix = options.prefix || '';
+    this.redis.defineCommand('rollingLimit', {
+        numberOfKeys: 1,
+        lua: luaScript
+    });
 }
 
 RollingLimit.prototype.use = function(id, amt, cb) {
@@ -38,22 +42,9 @@ RollingLimit.prototype.use = function(id, amt, cb) {
     }
     log.debug('rollinglimit: use called', {id: id, amount: amount});
     return new Promise(function(resolve, reject) {
-        _this.redis.evalsha(luaScript.sha1, 1, _this.prefix + id, _this.limit, _this.interval, Date.now(), amount, function(err, res) {
-            if (!err) {
-                log.debug('rollinglimit: use success', {
-                    id: id,
-                    result: res
-                });
-                resolve(res);
-                if (callback) {
-                    callback(null, res);
-                }
-                return;
-            }
-            //handle errors
-            //NOSCRIPT just means it hasn't been cached yet
-            if (!(err instanceof Error) || err.message.indexOf('NOSCRIPT') === -1) {
-                log.error('rollinglimit: error calling evalsh', {
+        _this.redis.rollingLimit(_this.prefix + id, _this.limit, _this.interval, Date.now(), amount, function(err, res) {
+            if (err) {
+                log.error('rollinglimit: error calling lua', {
                     id: id,
                     error: err
                 });
@@ -63,25 +54,15 @@ RollingLimit.prototype.use = function(id, amt, cb) {
                 }
                 return;
             }
-            //noinspection JSLint
-            _this.redis.eval(luaScript.script, 1, _this.prefix + id, _this.limit, _this.interval, Date.now(), amount, function(err, res) {
-                if (err) {
-                    log.error('rollinglimit: error calling eval', {
-                        id: id,
-                        error: err
-                    });
-                    reject(err);
-                } else {
-                    log.debug('rollinglimit: use success', {
-                        id: id,
-                        result: res
-                    });
-                    resolve(res);
-                }
-                if (callback) {
-                    callback(err, res);
-                }
+            log.debug('rollinglimit: use success', {
+                id: id,
+                result: res
             });
+            resolve(res);
+            if (callback) {
+                callback(null, res);
+            }
+            return;
         });
     });
 };

@@ -1,5 +1,8 @@
 ## Changelog ##
 
+### 0.4.0 ###
+* Use `ioredis` instead of `redis`
+
 ### 0.3.0 ###
 * Methods now return promises
 * Now using levenlabs-log

@@ -1,10 +1,10 @@
 var RollingLimit = require('../rollingLimit.js'),
-    redis = require('redis'),
+    Redis = require('ioredis'),
     prefix = 'node-redis-rolling-limit-test-' + Date.now(),
     redisClient, defaultLimiter;
 
 exports.redisClientConnect = function(test) {
-    redisClient = redis.createClient();
+    redisClient = new Redis();
     redisClient.on('ready', function() {
         defaultLimiter = new RollingLimit({
             interval: 5000,
