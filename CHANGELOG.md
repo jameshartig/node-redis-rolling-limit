@@ -1,5 +1,8 @@
 ## Changelog ##
 
+### 0.4.1 ###
+* Fixed lua file reading
+
 ### 0.4.0 ###
 * Use `ioredis` instead of `redis`
 

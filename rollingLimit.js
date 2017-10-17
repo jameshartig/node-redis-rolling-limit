@@ -1,7 +1,8 @@
 var util = require('util'),
     fs = require('fs'),
     log = require('levenlabs-log'),
-    luaScript = fs.readFileSync('./lua/rollingLimit.lua');
+    path = require('path'),
+    luaScript = fs.readFileSync(path.join(__dirname, './lua/rollingLimit.lua'), 'utf8');
 
 function RollingLimit(options) {
     if (typeof options !== 'object' || options === null) {
